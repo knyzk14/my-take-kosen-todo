@@ -40,7 +40,6 @@ export function SettingsPage() {
 
   return (
     <>
-      <div className="page-kicker"><BellRing size={15} /> PREFERENCES</div>
       <h1 className="page-title">設定</h1>
       <p className="page-description">通知先を登録して、提出期限を見逃さないようにしましょう。</p>
       <hr className="section-rule" />

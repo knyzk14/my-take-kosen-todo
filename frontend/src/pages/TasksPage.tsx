@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AlertCircle, CalendarDays, ClipboardList } from 'lucide-react'
+import { AlertCircle, Plus, X } from 'lucide-react'
 import { configClient, type MasterData } from '../api/configClient'
 import { taskClient } from '../api/taskClient'
 import { TaskForm } from '../components/TaskForm'
@@ -12,6 +12,7 @@ export function TasksPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [operationError, setOperationError] = useState<string | null>(null)
+  const [isFormOpen, setIsFormOpen] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -32,10 +33,25 @@ export function TasksPage() {
     return () => { active = false }
   }, [])
 
+  useEffect(() => {
+    if (!isFormOpen) return
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setIsFormOpen(false)
+    }
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [isFormOpen])
+
   async function createTask(input: TaskInput) {
     setOperationError(null)
     const task = await taskClient.createTask(input)
     setTasks((current) => [...current, task])
+    setIsFormOpen(false)
   }
 
   async function toggleTask(task: Task, completed: boolean) {
@@ -68,24 +84,36 @@ export function TasksPage() {
 
   return (
     <>
-      <div className="page-kicker"><CalendarDays size={15} /> MY WORKSPACE</div>
-      <h1 className="page-title">課題一覧</h1>
-      <p className="page-description">提出期限と、これから取り組む課題をここで管理します。完了 {tasks.filter((task) => task.is_completed).length} / {tasks.length}</p>
-      <hr className="section-rule" />
+      <header className="tasks-header">
+        <div>
+          <h1 className="page-title">課題一覧</h1>
+          <p className="page-description">未完了 {tasks.filter((task) => !task.is_completed).length} 件</p>
+        </div>
+        <button className="primary-button add-task-button" type="button" onClick={() => setIsFormOpen(true)}>
+          <Plus size={17} />課題を追加
+        </button>
+      </header>
       {loadError && <div className="notice error"><AlertCircle size={17} />{loadError}</div>}
       {operationError && <div className="notice error"><AlertCircle size={17} />{operationError}</div>}
       {loading ? (
         <div className="task-loading"><span className="loader" />課題を読み込んでいます</div>
       ) : (
         <>
-          {masterData && <TaskForm masterData={masterData} onCreate={createTask} />}
-          {!masterData && !loadError && <div className="notice error"><AlertCircle size={17} />科目設定を読み込めませんでした。</div>}
-          <div className="task-list-heading">
-            <div><ClipboardList size={17} /><h2>登録済みの課題</h2></div>
-            <span>{tasks.length} 件</span>
-          </div>
           <TaskList tasks={tasks} onToggle={toggleTask} onDelete={deleteTask} />
         </>
+      )}
+      {isFormOpen && (
+        <div className="task-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsFormOpen(false) }}>
+          <section className="task-modal" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+            <header className="task-modal-header">
+              <h2 id="task-modal-title">課題を追加</h2>
+              <button className="icon-button modal-close" type="button" aria-label="閉じる" onClick={() => setIsFormOpen(false)}><X size={19} /></button>
+            </header>
+            {masterData ? <TaskForm masterData={masterData} onCreate={createTask} /> : (
+              <div className="modal-message">{loadError || '科目設定を読み込めませんでした。'}</div>
+            )}
+          </section>
+        </div>
       )}
     </>
   )

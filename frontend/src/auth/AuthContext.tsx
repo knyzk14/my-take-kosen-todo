@@ -1,6 +1,8 @@
 import {
   GoogleAuthProvider,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
+  signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
   type User,
@@ -31,6 +33,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async signInWithGoogle() {
       if (!auth) throw new Error('Firebaseの設定が完了していません。')
       await signInWithPopup(auth, new GoogleAuthProvider())
+    },
+    async signInWithEmail(email: string, password: string) {
+      if (!auth) throw new Error('Firebaseの設定が完了していません。')
+      await signInWithEmailAndPassword(auth, email, password)
+    },
+    async signUpWithEmail(email: string, password: string) {
+      if (!auth) throw new Error('Firebaseの設定が完了していません。')
+      await createUserWithEmailAndPassword(auth, email, password)
     },
     async signOutUser() {
       if (!auth) throw new Error('Firebaseの設定が完了していません。')

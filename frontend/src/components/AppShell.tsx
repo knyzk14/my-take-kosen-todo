@@ -19,9 +19,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="sidebar">
         <NavLink className="brand" to="/" aria-label="学課 ホーム">
           <span className="brand-mark"><BookOpenCheck size={18} strokeWidth={2.4} /></span>
-          <span>学課</span>
+          <span>KosenTodo</span>
         </NavLink>
-        <div className="side-label">ワークスペース</div>
         <nav aria-label="メインナビゲーション">
           <NavLink className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`} end to="/">
             <ClipboardList size={17} />課題一覧

@@ -1,4 +1,3 @@
-import { Plus } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { MasterData } from '../api/configClient'
 import type { TaskFields, TaskInput } from '../types/task'
@@ -92,14 +91,7 @@ export function TaskForm({ masterData, onCreate }: TaskFormProps) {
   }
 
   return (
-    <section className="task-form-panel" aria-labelledby="task-form-title">
-      <div className="task-form-heading">
-        <div>
-          <p className="eyebrow task-form-eyebrow">NEW ASSIGNMENT</p>
-          <h2 id="task-form-title">課題を追加</h2>
-        </div>
-        <span className="task-form-mark"><Plus size={19} /></span>
-      </div>
+    <section className="task-form-panel" aria-label="課題を追加">
       <form className="task-form" onSubmit={submit}>
         <label className="task-field task-field-wide">
           <span>課題名</span>
@@ -131,24 +123,22 @@ export function TaskForm({ masterData, onCreate }: TaskFormProps) {
           <legend>大変度</legend>
           <div className="effort-options">
             {([
-              { value: 1, label: '軽い', description: 'さっと取り組める' },
-              { value: 2, label: '普通', description: 'いつもの課題' },
-              { value: 3, label: '重い', description: '時間をかけて進める' },
+              { value: 1, label: '軽い' },
+              { value: 2, label: '普通' },
+              { value: 3, label: '重い' },
             ] as const).map((option) => (
               <label className={`effort-option${fields.effort_level === option.value ? ' selected' : ''}`} key={option.value}>
                 <input type="radio" name="effort-level" value={option.value} checked={fields.effort_level === option.value} onChange={() => update('effort_level', option.value)} />
                 <span className="effort-dots" aria-hidden="true">{'●'.repeat(option.value)}{'○'.repeat(3 - option.value)}</span>
                 <span className="effort-label">{option.label}</span>
-                <span className="effort-description">{option.description}</span>
               </label>
             ))}
           </div>
         </fieldset>
         {error && <p className="task-form-error" role="alert">{error}</p>}
         <div className="task-form-footer">
-          <p>課題名やURLから教科・提出方法を自動で補完します。</p>
           <button className="primary-button" type="submit" disabled={submitting}>
-            <Plus size={16} />{submitting ? '追加中...' : '課題を追加'}
+            {submitting ? '追加中...' : '追加'}
           </button>
         </div>
       </form>
