@@ -1,5 +1,6 @@
 import { CircleAlert } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
+import { Logo } from '../components/Logo'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 
@@ -45,6 +46,9 @@ export function LoginPage() {
   return (
     <main className="login-layout">
       <section className="login-aside">
+        <div className="login-watermark" aria-hidden="true">
+          <Logo className="login-watermark-logo" />
+        </div>
         <div className="brand login-brand"><span>KosenTodo</span></div>
       </section>
       <section className="login-panel">

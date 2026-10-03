@@ -1,13 +1,26 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { MasterData } from '../api/configClient'
-import type { TaskFields, TaskInput } from '../types/task'
+import type { Task, TaskFields, TaskInput } from '../types/task'
 
 type TaskFormProps = {
   masterData: MasterData
-  onCreate: (task: TaskInput) => Promise<void>
+  initialTask?: Task | null
+  onSave: (task: TaskInput) => Promise<void>
 }
 
-function initialFields(): TaskFields {
+function initialFields(task?: Task | null): TaskFields {
+  if (task) {
+    const dueDate = new Date(task.due_date)
+    return {
+      title: task.title,
+      due_date: new Date(dueDate.getTime() - dueDate.getTimezoneOffset() * 60_000).toISOString().slice(0, 16),
+      subject: task.subject,
+      submission_type: task.submission_type,
+      submission_link: task.submission_link,
+      effort_level: task.effort_level,
+    }
+  }
+
   const dueDate = new Date()
   dueDate.setDate(dueDate.getDate() + 1)
   dueDate.setHours(23, 59, 0, 0)
@@ -21,14 +34,17 @@ function initialFields(): TaskFields {
   }
 }
 
-export function TaskForm({ masterData, onCreate }: TaskFormProps) {
-  const [fields, setFields] = useState<TaskFields>(initialFields)
+export function TaskForm({ masterData, initialTask = null, onSave }: TaskFormProps) {
+  const [fields, setFields] = useState<TaskFields>(() => initialFields(initialTask))
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const automaticSubject = useRef<string | null>(null)
   const automaticSubmissionType = useRef<string | null>(null)
+  const hasEditedTitle = useRef(false)
+  const hasEditedLink = useRef(false)
 
   useEffect(() => {
+    if (initialTask && !hasEditedTitle.current) return
     const title = fields.title.toLocaleLowerCase()
     const match = masterData.subjects.find((subject) =>
       subject.keywords.some((keyword) => keyword && title.includes(keyword.toLocaleLowerCase())),
@@ -40,9 +56,10 @@ export function TaskForm({ masterData, onCreate }: TaskFormProps) {
       if (match) return current.subject === match.name ? current : { ...current, subject: match.name }
       return subjectWasAutomatic ? { ...current, subject: '' } : current
     })
-  }, [fields.title, masterData.subjects])
+  }, [fields.title, initialTask, masterData.subjects])
 
   useEffect(() => {
+    if (initialTask && !hasEditedLink.current) return
     let match: MasterData['submission_types'][number] | undefined
     try {
       const hostname = new URL(fields.submission_link || '').hostname.toLocaleLowerCase()
@@ -63,7 +80,7 @@ export function TaskForm({ masterData, onCreate }: TaskFormProps) {
       if (match) return current.submission_type === match.name ? current : { ...current, submission_type: match.name }
       return typeWasAutomatic ? { ...current, submission_type: '' } : current
     })
-  }, [fields.submission_link, masterData.submission_types])
+  }, [fields.submission_link, initialTask, masterData.submission_types])
 
   function update<K extends keyof TaskFields>(key: K, value: TaskFields[K]) {
     setFields((current) => ({ ...current, [key]: value }))
@@ -74,17 +91,17 @@ export function TaskForm({ masterData, onCreate }: TaskFormProps) {
     setSubmitting(true)
     setError(null)
     try {
-      await onCreate({
+      await onSave({
         ...fields,
         due_date: new Date(fields.due_date).toISOString(),
         submission_link: fields.submission_link?.trim() || null,
-        is_completed: false,
+        is_completed: initialTask?.is_completed ?? false,
       })
       setFields(initialFields())
       automaticSubject.current = null
       automaticSubmissionType.current = null
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : '課題を登録できませんでした。')
+      setError(cause instanceof Error ? cause.message : '課題を保存できませんでした。')
     } finally {
       setSubmitting(false)
     }
@@ -95,7 +112,7 @@ export function TaskForm({ masterData, onCreate }: TaskFormProps) {
       <form className="task-form" onSubmit={submit}>
         <label className="task-field task-field-wide">
           <span>課題名</span>
-          <input required maxLength={500} value={fields.title} onChange={(event) => update('title', event.target.value)} placeholder="例: 数学II 問題集 p.42" />
+          <input required maxLength={500} value={fields.title} onChange={(event) => { hasEditedTitle.current = true; update('title', event.target.value) }} placeholder="例: 数学II 問題集 p.42" />
         </label>
         <label className="task-field">
           <span>教科</span>
@@ -117,7 +134,7 @@ export function TaskForm({ masterData, onCreate }: TaskFormProps) {
         </label>
         <label className="task-field">
           <span>提出先URL <small>任意</small></span>
-          <input type="url" value={fields.submission_link || ''} onChange={(event) => update('submission_link', event.target.value)} placeholder="https://..." />
+          <input type="url" value={fields.submission_link || ''} onChange={(event) => { hasEditedLink.current = true; update('submission_link', event.target.value) }} placeholder="https://..." />
         </label>
         <fieldset className="task-field task-effort">
           <legend>大変度</legend>
@@ -138,7 +155,7 @@ export function TaskForm({ masterData, onCreate }: TaskFormProps) {
         {error && <p className="task-form-error" role="alert">{error}</p>}
         <div className="task-form-footer">
           <button className="primary-button" type="submit" disabled={submitting}>
-            {submitting ? '追加中...' : '追加'}
+            {submitting ? '保存中...' : initialTask ? '変更を保存' : '追加'}
           </button>
         </div>
       </form>

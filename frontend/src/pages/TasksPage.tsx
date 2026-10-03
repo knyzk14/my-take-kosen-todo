@@ -13,6 +13,7 @@ export function TasksPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [operationError, setOperationError] = useState<string | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
 
   useEffect(() => {
     let active = true
@@ -47,11 +48,22 @@ export function TasksPage() {
     }
   }, [isFormOpen])
 
-  async function createTask(input: TaskInput) {
+  async function saveTask(input: TaskInput) {
     setOperationError(null)
-    const task = await taskClient.createTask(input)
-    setTasks((current) => [...current, task])
+    if (editingTask) {
+      const updatedTask = await taskClient.updateTask(editingTask.id, input)
+      setTasks((current) => current.map((task) => task.id === updatedTask.id ? updatedTask : task))
+    } else {
+      const task = await taskClient.createTask(input)
+      setTasks((current) => [...current, task])
+    }
+    setEditingTask(null)
     setIsFormOpen(false)
+  }
+
+  function closeTaskForm() {
+    setIsFormOpen(false)
+    setEditingTask(null)
   }
 
   async function toggleTask(task: Task, completed: boolean) {
@@ -99,17 +111,17 @@ export function TasksPage() {
         <div className="task-loading"><span className="loader" />課題を読み込んでいます</div>
       ) : (
         <>
-          <TaskList tasks={tasks} onToggle={toggleTask} onDelete={deleteTask} />
+          <TaskList tasks={tasks} onToggle={toggleTask} onDelete={deleteTask} onEdit={(task) => { setEditingTask(task); setIsFormOpen(true) }} />
         </>
       )}
       {isFormOpen && (
-        <div className="task-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setIsFormOpen(false) }}>
+        <div className="task-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeTaskForm() }}>
           <section className="task-modal" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
             <header className="task-modal-header">
-              <h2 id="task-modal-title">課題を追加</h2>
-              <button className="icon-button modal-close" type="button" aria-label="閉じる" onClick={() => setIsFormOpen(false)}><X size={19} /></button>
+              <h2 id="task-modal-title">{editingTask ? '課題を編集' : '課題を追加'}</h2>
+              <button className="icon-button modal-close" type="button" aria-label="閉じる" onClick={closeTaskForm}><X size={19} /></button>
             </header>
-            {masterData ? <TaskForm masterData={masterData} onCreate={createTask} /> : (
+            {masterData ? <TaskForm key={editingTask?.id ?? 'new'} masterData={masterData} initialTask={editingTask} onSave={saveTask} /> : (
               <div className="modal-message">{loadError || '科目設定を読み込めませんでした。'}</div>
             )}
           </section>

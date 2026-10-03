@@ -1,4 +1,4 @@
-import { AlertCircle, Check, ExternalLink, Trash2 } from 'lucide-react'
+import { AlertCircle, Check, ExternalLink, Pencil, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { Task } from '../types/task'
 
@@ -6,6 +6,7 @@ type TaskListProps = {
   tasks: Task[]
   onToggle: (task: Task, completed: boolean) => Promise<void>
   onDelete: (task: Task) => Promise<void>
+  onEdit: (task: Task) => void
 }
 
 type TaskFilter = 'open' | 'all' | 'completed'
@@ -20,7 +21,7 @@ function formatDueDate(value: string) {
   }).format(new Date(value))
 }
 
-export function TaskList({ tasks, onToggle, onDelete }: TaskListProps) {
+export function TaskList({ tasks, onToggle, onDelete, onEdit }: TaskListProps) {
   const [pendingTaskID, setPendingTaskID] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState<number | null>(null)
   const [filter, setFilter] = useState<TaskFilter>('open')
@@ -104,9 +105,14 @@ export function TaskList({ tasks, onToggle, onDelete }: TaskListProps) {
               <span className={`effort-tag effort-${task.effort_level}`}>{['', '軽い', '普通', '重い'][task.effort_level]}</span>
               {task.submission_link && <a className="task-link" href={task.submission_link} target="_blank" rel="noreferrer" aria-label="提出先を開く"><ExternalLink size={14} /></a>}
             </div>
-            <button className="task-delete" type="button" title="課題を削除" aria-label={`${task.title}を削除`} disabled={busy} onClick={() => void remove(task)}>
-              <Trash2 size={16} />
-            </button>
+            <div className="task-actions">
+              <button className="task-edit" type="button" title="課題を編集" aria-label={`${task.title}を編集`} disabled={busy} onClick={() => onEdit(task)}>
+                <Pencil size={15} />
+              </button>
+              <button className="task-delete" type="button" title="課題を削除" aria-label={`${task.title}を削除`} disabled={busy} onClick={() => void remove(task)}>
+                <Trash2 size={16} />
+              </button>
+            </div>
           </article>
         )
           })}

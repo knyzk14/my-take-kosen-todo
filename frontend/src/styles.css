@@ -291,3 +291,33 @@ a { color: inherit; text-decoration: none; }
   .task-row-main { grid-template-columns: minmax(50px, 1.3fr) minmax(30px, .5fr) minmax(48px, .8fr) minmax(65px, 1.1fr); }
   .task-row .task-due { display: none; }
 }
+
+.login-aside { position: relative; overflow: hidden; }
+.login-brand { position: relative; z-index: 1; font-size: clamp(40px, 5vw, 52px); font-weight: 700; line-height: 1.15; letter-spacing: 0; }
+.login-watermark { position: absolute; z-index: 0; top: 50%; left: 0%; width: min(72vh, 70vw); aspect-ratio: 1; transform: translateY(-50%); opacity: .06; pointer-events: none; user-select: none; }
+.login-watermark-logo { width: 100%; height: 100%; }
+.task-row { grid-template-columns: 25px minmax(0, 1fr) 72px; }
+.task-actions { display: flex; align-items: center; justify-content: flex-end; gap: 2px; }
+.task-edit, .task-delete { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border: 0; border-radius: 6px; color: #71717a; background: transparent; cursor: pointer; }
+.task-edit:hover:not(:disabled) { color: #18181b; background: #f4f4f5; }
+.task-delete:hover:not(:disabled) { color: #ad4535; background: #fbeeea; }
+.task-edit:disabled, .task-delete:disabled { opacity: .4; cursor: wait; }
+.task-modal, .task-modal-header { background: #fff; }
+.task-modal-header { background: rgba(255,255,255,.97); }
+
+@media (max-width: 760px) {
+  .login-watermark { top: 0; left: -1vw; width: min(68vw, 56vh); transform: none; }
+  .task-row { grid-template-columns: 21px minmax(0, 1fr) 60px; }
+  .task-row-main { grid-template-columns: minmax(0, 1fr) minmax(34px, .45fr) minmax(48px, .7fr); gap: 5px; }
+  .task-row .task-due, .task-row .effort-tag, .task-row .task-link { display: none; }
+  .task-actions .task-edit, .task-actions .task-delete { width: 28px; height: 32px; }
+}
+
+@media (max-width: 390px) {
+  .login-watermark { top: -12vw; left: -15vw; width: min(70vw, 56vh); }
+  .task-row { grid-template-columns: 20px minmax(0, 1fr) 54px; gap: 5px; padding-inline: 5px; }
+  .task-row-main { grid-template-columns: minmax(0, 1fr) minmax(30px, .4fr) minmax(44px, .65fr); gap: 4px; }
+  .task-row-main > h3 { font-size: 12px; }
+  .task-subject, .task-submission { font-size: 10px; }
+  .task-actions .task-edit, .task-actions .task-delete { width: 25px; }
+}

@@ -27,10 +27,30 @@ type dueReminder struct {
 	taskID            string
 	userID            string
 	title             string
+	subject           string
+	submissionType    string
+	submissionLink    sql.NullString
 	dueDate           time.Time
 	effortLevel       int
 	daysBefore        int
 	discordWebhookURL string
+}
+
+type discordWebhookPayload struct {
+	Embeds []discordEmbed `json:"embeds"`
+}
+
+type discordEmbed struct {
+	Title       string              `json:"title"`
+	Description string              `json:"description"`
+	Color       int                 `json:"color"`
+	Fields      []discordEmbedField `json:"fields"`
+}
+
+type discordEmbedField struct {
+	Name   string `json:"name"`
+	Value  string `json:"value"`
+	Inline bool   `json:"inline"`
 }
 
 func NewNotifier(db *sql.DB, client *http.Client) *Notifier {
@@ -126,7 +146,8 @@ func (notifier *Notifier) RunPeriodically(ctx context.Context, interval time.Dur
 
 func (notifier *Notifier) findDueReminders(ctx context.Context) ([]dueReminder, error) {
 	const query = `
-		SELECT t.id::text, t.user_id, t.title, t.due_date, t.effort_level,
+		SELECT t.id::text, t.user_id, t.title, t.subject, t.submission_type,
+		       t.submission_link, t.due_date, t.effort_level,
 		       schedule.days_before, us.discord_webhook_url
 		FROM tasks AS t
 		JOIN user_settings AS us ON us.user_id = t.user_id
@@ -159,6 +180,9 @@ func (notifier *Notifier) findDueReminders(ctx context.Context) ([]dueReminder, 
 			&reminder.taskID,
 			&reminder.userID,
 			&reminder.title,
+			&reminder.subject,
+			&reminder.submissionType,
+			&reminder.submissionLink,
 			&reminder.dueDate,
 			&reminder.effortLevel,
 			&reminder.daysBefore,
@@ -179,16 +203,9 @@ func (notifier *Notifier) send(ctx context.Context, reminder dueReminder) error 
 		return fmt.Errorf("invalid stored Discord webhook URL")
 	}
 
-	content := fmt.Sprintf(
-		"課題の提出期限が%d日後です。\n課題: %s\n期限: %s\n大変度: %d/3",
-		reminder.daysBefore,
-		reminder.title,
-		reminder.dueDate.Format(time.RFC3339),
-		reminder.effortLevel,
-	)
-	body, err := json.Marshal(struct {
-		Content string `json:"content"`
-	}{Content: content})
+	body, err := json.Marshal(discordWebhookPayload{
+		Embeds: []discordEmbed{buildDiscordEmbed(reminder)},
+	})
 	if err != nil {
 		return fmt.Errorf("encode Discord message: %w", err)
 	}
@@ -208,6 +225,46 @@ func (notifier *Notifier) send(ctx context.Context, reminder dueReminder) error 
 		return fmt.Errorf("Discord returned HTTP %d", response.StatusCode)
 	}
 	return nil
+}
+
+func buildDiscordEmbed(reminder dueReminder) discordEmbed {
+	dueDate := reminder.dueDate.In(time.FixedZone("JST", 9*60*60))
+	description := fmt.Sprintf("提出期限: %s\n期限まであと%d日", dueDate.Format("2006年1月2日 15:04"), reminder.daysBefore)
+	if reminder.submissionLink.Valid && reminder.submissionLink.String != "" {
+		description += "\n提出先: " + truncateDiscordText(reminder.submissionLink.String, 1024)
+	}
+
+	return discordEmbed{
+		Title:       truncateDiscordText(reminder.title, 256),
+		Description: truncateDiscordText(description, 4000),
+		Color:       reminderColor(reminder.effortLevel),
+		Fields: []discordEmbedField{
+			{Name: "教科", Value: truncateDiscordText(reminder.subject, 1024), Inline: true},
+			{Name: "提出方法", Value: truncateDiscordText(reminder.submissionType, 1024), Inline: true},
+			{Name: "大変度", Value: fmt.Sprintf("%d / 3", reminder.effortLevel), Inline: true},
+		},
+	}
+}
+
+func reminderColor(effortLevel int) int {
+	switch effortLevel {
+	case 1:
+		return 0xA1A1AA
+	case 2:
+		return 0xF59E0B
+	case 3:
+		return 0xDC2626
+	default:
+		return 0x71717A
+	}
+}
+
+func truncateDiscordText(value string, maxRunes int) string {
+	runes := []rune(value)
+	if len(runes) <= maxRunes {
+		return value
+	}
+	return string(runes[:maxRunes-1]) + "…"
 }
 
 func (notifier *Notifier) recordDelivery(ctx context.Context, reminder dueReminder, sentAt *time.Time, lastError *string) error {
