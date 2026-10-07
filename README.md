@@ -44,6 +44,20 @@ Firebase Admin SDKのサービスアカウントJSONを `backend/firebase-admins
 
 PostgreSQLの接続情報はプロジェクトルートの `.env` で `POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB` を指定できます。未指定の場合は開発用のCompose既定値が使われます。本番用途では必ず強固な値を設定してください。
 
+### CORS許可Origin
+
+本番フロントエンドとAPIが別オリジンの場合、`CORS_ALLOWED_ORIGINS` にブラウザーのOriginを指定します。プロジェクトルートの `.env.example` を `.env` にコピーし、値を実際のフロントエンドOriginに置き換えてください。Originはスキームとホスト（必要ならポート）までの完全一致で、末尾の `/` は付けません。複数指定する場合はカンマ区切りにします。
+
+```powershell
+Copy-Item .env.example .env
+```
+
+`.env` はGit管理対象外です。値を変更した後はbackendコンテナを再作成して反映します。
+
+```powershell
+docker compose up -d --force-recreate backend
+```
+
 ### 2. バックエンドとデータベースの起動
 
 プロジェクトルートで実行します。

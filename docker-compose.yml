@@ -11,7 +11,7 @@ services:
       DATABASE_URL: "postgres://${POSTGRES_USER:-todo}:${POSTGRES_PASSWORD:-todo-dev-password}@db:5432/${POSTGRES_DB:-school_todo}?sslmode=disable"
       MASTER_DATA_PATH: /app/internal/config/master_data.json
       GOOGLE_APPLICATION_CREDENTIALS: /app/firebase-adminsdk.json
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:13000,http://localhost:5173}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
     volumes:
       - ./backend/internal/config/master_data.json:/app/internal/config/master_data.json:ro
       - ./backend/firebase-adminsdk.json:/app/firebase-adminsdk.json:ro
