@@ -92,7 +92,7 @@ func run() error {
 	}
 	server := &http.Server{
 		Addr:              ":" + port,
-		Handler:           mux,
+		Handler:           middleware.CORS(os.Getenv("CORS_ALLOWED_ORIGINS"))(mux),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
