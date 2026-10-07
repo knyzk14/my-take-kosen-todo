@@ -5,7 +5,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "${BACKEND_PORT:-8080}:8080"
+      - "18080:8080"
     environment:
       PORT: "8080"
       DATABASE_URL: "postgres://${POSTGRES_USER:-todo}:${POSTGRES_PASSWORD:-todo-dev-password}@db:5432/${POSTGRES_DB:-school_todo}?sslmode=disable"
@@ -17,6 +17,17 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "13000:80"
+    depends_on:
+      - backend
     restart: unless-stopped
 
   db:
