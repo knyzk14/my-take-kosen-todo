@@ -3,6 +3,7 @@ import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signInWithRedirect,
   signOut,
   type User,
@@ -32,7 +33,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     configurationError: isFirebaseConfigured ? null : 'Firebaseの設定値がありません。.env.exampleを参考にfrontend/.env.localを設定してください。',
     async signInWithGoogle() {
       if (!auth) throw new Error('Firebaseの設定が完了していません。')
-      await signInWithRedirect(auth, new GoogleAuthProvider())
+      const provider = new GoogleAuthProvider()
+      try {
+        await signInWithPopup(auth, provider)
+      } catch (error) {
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'auth/popup-blocked') {
+          await signInWithRedirect(auth, provider)
+          return
+        }
+        throw error
+      }
     },
     async signInWithEmail(email: string, password: string) {
       if (!auth) throw new Error('Firebaseの設定が完了していません。')
