@@ -5,7 +5,8 @@ export type AuthContextValue = {
   user: User | null
   loading: boolean
   configurationError: string | null
-  signInWithGoogle: () => Promise<void>
+  redirectError: string | null
+  signInWithGoogle: (destination: string) => Promise<void>
   signInWithEmail: (email: string, password: string) => Promise<void>
   signUpWithEmail: (email: string, password: string) => Promise<void>
   signOutUser: () => Promise<void>

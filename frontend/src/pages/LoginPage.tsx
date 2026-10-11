@@ -5,8 +5,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 
 export function LoginPage() {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail, configurationError } = useAuth()
-  const [error, setError] = useState<string | null>(null)
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail, configurationError, redirectError } = useAuth()
+  const [error, setError] = useState<string | null>(redirectError)
   const [busy, setBusy] = useState(false)
   const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
@@ -19,7 +19,7 @@ export function LoginPage() {
     setBusy(true)
     setError(null)
     try {
-      await signInWithGoogle()
+      await signInWithGoogle(destination)
       navigate(destination, { replace: true })
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'ログインできませんでした。')
